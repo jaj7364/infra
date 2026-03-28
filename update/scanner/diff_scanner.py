@@ -1,7 +1,7 @@
 import os
 from .base_scanner import BaseScanner
 
-class FileListScanner(BaseScanner):
+class DiffScanner(BaseScanner):
     def __init__(self, target_files, method_file_path):
         super().__init__(method_file_path)
         self.target_files = target_files

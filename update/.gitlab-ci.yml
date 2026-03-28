@@ -1,0 +1,28 @@
+stages:
+  - pre-init
+  - init
+  - image-build
+  - build
+
+# ----------------------------------------------------
+# [트랙 A] MR 뜰 때만 도는 가벼운 보안 스캔
+privacy-scan:
+  stage: pre-init
+  script:
+    - echo "🔍 개인정보 스캔 파이프라인을 시작합니다..."
+    - python privacy_scan/main.py --diff-only
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# ----------------------------------------------------
+# [트랙 B] 머지 완료 후(또는 특정 브랜치 푸시 시) 도는 무거운 작업들
+init_job:
+  stage: init
+  script:
+    - echo "초기화 작업..."
+  # rules가 없거나 특정 브랜치 조건만 있으면 트랙 B로 동작
+  
+image_build_job:
+  stage: image-build
+  script:
+    - echo "도커 이미지 빌드..."

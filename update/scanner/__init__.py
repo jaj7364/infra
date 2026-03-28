@@ -1,2 +1,2 @@
-from .directory_scanner import DirectoryScanner
-from .filelist_scanner import FileListScanner
+from .full_scanner import FullScanner
+from .diff_scanner import DiffScanner

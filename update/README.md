@@ -8,3 +8,8 @@ project/
 │    ├── directory_scanner.py
 │    ├── filelist_scanner.py
 ├── pii_methods.txt
+
+python privacy_scan/main.py --diff-only
+python privacy_scan/main.py --path .
+python privacy_scan/main.py --diff-only --summary-only
+python privacy_scan/main.py --diff-only --fail-on-detection

@@ -3,7 +3,9 @@ from detectors import ALL_DETECTORS
 
 class BaseScanner:
     def __init__(self, method_file_path):
+        # 민감 메소드 사전
         self.method_dict = self._load_methods(method_file_path)
+        # 정규식 기반 탐지기
         self.detectors = ALL_DETECTORS
 
         self.ignore_dirs = ('.git', '__pycache__', 'node_modules', 'venv', '.idea')
@@ -15,6 +17,7 @@ class BaseScanner:
             '.csl', '.dat', '.cfinfo', '.so', '.apk'
         )
 
+    # 민감 메소드 파일(txt)을 열여서 method_dict 생성
     def _load_methods(self, file_path):
         method_dict = {}
 
@@ -37,6 +40,7 @@ class BaseScanner:
 
         return method_dict
 
+    # 민감 메소드 기반 검사 & 정규식 기반 검사
     def _scan_file(self, file_path):
         findings = []
         encoding_to_try = ['utf-8', 'cp949', 'euc-kr']
@@ -69,7 +73,7 @@ class BaseScanner:
                                     "matches": matches
                                 })
 
-                break  # encoding 성공 시 종료
+                break  # encoding 성공 시 종료 (더이상 for문을 돌지 않고 retrun findings)
 
             except UnicodeDecodeError:
                 continue

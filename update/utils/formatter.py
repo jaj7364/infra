@@ -1,3 +1,4 @@
+# results는 full_scanner.py와 diff_scanner.py의 결과
 def print_results(results, summary_only=False):
     total_methods = 0
     total_regex = 0
@@ -7,6 +8,7 @@ def print_results(results, summary_only=False):
             print(f"\n📄 {file_path}")
 
         for finding in findings:
+            # summary_only 라면 조건문 통과
             if not summary_only:
                 print(f"  -> [Line {finding['line']}] {finding['type']}: {finding['matches']}")
 
