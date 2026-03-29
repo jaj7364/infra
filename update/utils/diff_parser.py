@@ -1,56 +1,43 @@
 import os
 import subprocess
+from pathlib import Path
 
 def get_git_diff_files():
-    """GitLab MR 환경에서 변경된 파일 리스트 추출"""
+    """GitLab MR 환경에서 변경된(Added, Modified, Renamed) 파일 리스트 추출"""
+    
+    # 1. 환경 변수 처리 (Pathlib 미적용 구간이지만 명확하게 관리)
     target_branch = os.environ.get('CI_MERGE_REQUEST_TARGET_BRANCH_NAME', 'main')
-
+    
     try:
-        # shallow clone 대응
-        subprocess.run(
-            ['git', 'fetch', '--depth=100', 'origin', target_branch],
-            check=False,
-            capture_output=True
-        )
+        # 2. Shallow Clone 대응 (fetch)
+        # --depth=100은 안전장치지만, 대상 브랜치만 콕 집어 가져오는 게 더 효율적입니다.
+        fetch_cmd = ['git', 'fetch', '--depth=100', 'origin', target_branch]
+        subprocess.run(fetch_cmd, check=False, capture_output=True, text=True)
 
-        # 변경된 파일 추출 (Added, Modified)
-        cmd = [
+        # 3. 변경된 파일 추출 (A:추가, M:수정, R:이름변경 포함)
+        # '...HEAD' (점 3개)는 공통 조상(Merge Base)부터 현재까지의 차이를 찾는 정석적인 방법입니다.
+        diff_cmd = [
             'git', 'diff',
             '--name-only',
-            '--diff-filter=AM',
+            '--diff-filter=AMR',  # R(Renamed)도 포함하는 것이 보안상 안전합니다.
             f'origin/{target_branch}...HEAD'
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(diff_cmd, capture_output=True, text=True, check=True)
 
-        if result.returncode != 0:
-            print(f"[-] git diff 실패: {result.stderr}")
-            return []
-
+        # 4. 결과 정제 (List Comprehension + Pathlib)
+        # 텅 빈 줄을 제거하고, 실제로 존재하는 '파일'인지 검증합니다.
         files = [
-            f for f in result.stdout.strip().split('\n')
-            if f and os.path.isfile(f)
+            line.strip() 
+            for line in result.stdout.splitlines() 
+            if line.strip() and Path(line.strip()).is_file()
         ]
-#     # 1. 스캔할 파일 이름들을 담을 빈 바구니를 준비합니다.
-#         files = []
-#
-#         # 2. 터미널 출력 결과(stdout)를 다듬습니다.
-#         # .strip(): 맨 앞이나 맨 뒤에 붙은 쓸데없는 공백이나 줄바꿈을 깔끔하게 지웁니다.
-#         # .split('\n'): 엔터키(줄바꿈 기호 '\n')를 기준으로 글자를 칼질해서 조각조각 냅니다.
-#         chopped_texts = result.stdout.strip().split('\n')
-#
-#         # 3. 조각난 글자(파일 경로)들을 하나씩 꺼내서 f 라고 부릅니다.
-#         for f in chopped_texts:
-#
-#             # 4. 검증 1단계 (if f): 이름이 텅 비어있지 않은지 확인합니다. ("" 이면 False 취급)
-#             # 5. 검증 2단계 (os.path.isfile): 이 경로에 진짜로 '파일'이 존재하는지 디스크를 뒤져서 확인합니다. (삭제된 파일이면 스캔할 수 없으니까요!)
-#             if f and os.path.isfile(f):
-#
-#                 # 두 검증을 모두 통과한 진짜 파일만 바구니에 담습니다.
-#                 files.append(f)
 
         return files
 
+    except subprocess.CalledProcessError as e:
+        print(f"[-] git 명령 실행 실패: {e.stderr}")
+        return []
     except Exception as e:
-        print(f"[-] Git diff 처리 중 오류: {e}")
+        print(f"[-] Git diff 처리 중 예상치 못한 오류: {e}")
         return []

@@ -1,13 +1,10 @@
 import os
-from pathlib import Path
 from detectors import ALL_DETECTORS
 
 class BaseScanner:
     def __init__(self, method_file_path):
         # 민감 메소드 사전
-        self.method_file_path = Path(method_file_path)
-        self.method_dict = self._load_methods(self.method_file_path)
-
+        self.method_dict = self._load_methods(method_file_path)
         # 정규식 기반 탐지기
         self.detectors = ALL_DETECTORS
 
@@ -23,18 +20,10 @@ class BaseScanner:
     # 민감 메소드 파일(txt)을 열여서 method_dict 생성
     def _load_methods(self, file_path):
         method_dict = {}
-        file_path = Path(file_path) # 확실하게 Path 객체로 보장
 
-        if not file_path.exists():
+        if not os.path.exists(file_path):
             print(f"[경고] 사전 파일({file_path}) 없음")
             return method_dict
-
-#     def _load_methods(self, file_path):
-#         method_dict = {}
-#
-#         if not os.path.exists(file_path):
-#             print(f"[경고] 사전 파일({file_path}) 없음")
-#             return method_dict
 
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:

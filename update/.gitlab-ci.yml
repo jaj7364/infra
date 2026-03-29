@@ -9,10 +9,35 @@ stages:
 privacy-scan:
   stage: pre-init
   script:
-    - echo "🔍 개인정보 스캔 파이프라인을 시작합니다..."
     - python privacy_scan/main.py --diff-only
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+privacy-scan:
+  stage: pre-init
+  before_script:
+    # 필요한 라이브러리가 있다면 여기서 설치 (예: detectors 관련)
+    # - pip install -r requirements.txt
+    - echo "🔧 환경 준비 완료: $(python --version)"
+  script:
+    - echo "🔍 검사 대상 브랜치: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - echo "🔍 현재 소스 브랜치: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+    - echo "🔍 [보안 검사] 개인정보 및 민감 메소드 스캔을 시작합니다..."
+    # --fail-on-detection 옵션을 추가하여 탐지 시 빌드를 실패 처리합니다.
+    - python privacy_scan/main.py --diff-only --fail-on-detection
+
+  rules:
+    # 타겟 브랜치 이름이 'feature_main_'으로 시작하는 MR일 때만 실행!
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^feature_main_/'
+
+#rules:
+#  - if: >
+#      $CI_PIPELINE_SOURCE == "merge_request_event" &&
+#      $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature_sub_/ &&
+#      $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^feature_main_/
+#    when: always
+#
+#  - when: never
 
 # ----------------------------------------------------
 # [트랙 B] 머지 완료 후(또는 특정 브랜치 푸시 시) 도는 무거운 작업들
@@ -21,7 +46,7 @@ init_job:
   script:
     - echo "초기화 작업..."
   # rules가 없거나 특정 브랜치 조건만 있으면 트랙 B로 동작
-  
+
 image_build_job:
   stage: image-build
   script:
